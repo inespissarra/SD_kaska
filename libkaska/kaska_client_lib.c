@@ -47,7 +47,7 @@ static int init_socket_client() {
     return s;
 }
 
-static void free_subscribed_topic(void *entry, void *st){ //?????????
+static void free_subscribed_topic(void *entry, void *st){ //???
     free(((subscribed_topic*)st)->name);
     free(st);
 }
@@ -67,18 +67,10 @@ int create_topic(char *topic) {
 
     struct iovec iov[3]; // hay que enviar 3 elementos
     int nelem = 0;
-    // preparo el envío del entero convertido a formato de red
-    int entero_net = htonl(CREATE_TOPIC); // código de la operación
-    iov[nelem].iov_base=&entero_net;
-    iov[nelem++].iov_len=sizeof(int);
-
-    // preparo el envío del string mandando antes su longitud
+    int code = CREATE_TOPIC;
+    send_prep_int(iov, &nelem, &code);
     int longitud_str = strlen(topic); // no incluye el carácter nulo
-    int longitud_str_net = htonl(longitud_str);
-    iov[nelem].iov_base=&longitud_str_net;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=topic; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=longitud_str;
+    send_prep_arr(iov, &nelem, &longitud_str, topic);
 
     // modo de operación de los sockets asegura que si no hay error
     // se enviará todo (misma semántica que los "pipes")
@@ -108,10 +100,8 @@ int ntopics(void) {
 
     struct iovec iov[1]; // hay que enviar 1 elemento
     int nelem = 0;
-    // preparo el envío del entero convertido a formato de red
-    int entero_net = htonl(NTOPICS); // código de la operación
-    iov[nelem].iov_base=&entero_net;
-    iov[nelem++].iov_len=sizeof(int);
+    int code = NTOPICS;
+    send_prep_int(iov, &nelem, &code);
 
     // modo de operación de los sockets asegura que si no hay error
     // se enviará todo (misma semántica que los "pipes")
@@ -145,25 +135,11 @@ int send_msg(char *topic, int msg_size, void *msg) {
     struct iovec iov[5]; // hay que enviar 5 elementos
     int nelem = 0;
 
-    // preparo el envío del entero convertido a formato de red
-    int entero_net = htonl(SEND_MSG); // código de la operación
-    iov[nelem].iov_base=&entero_net;
-    iov[nelem++].iov_len=sizeof(int);
-
-    // preparo el envío del string mandando antes su longitud
+    int code = SEND_MSG;
+    send_prep_int(iov, &nelem, &code);
     int longitud_str = strlen(topic); // no incluye el carácter nulo
-    int longitud_str_net = htonl(longitud_str);
-    iov[nelem].iov_base=&longitud_str_net;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=topic; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=longitud_str;
-
-    // preparo el envío del mensaje mandando antes su longitud
-    int longitud_msg_net = htonl(msg_size);
-    iov[nelem].iov_base=&longitud_msg_net;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=msg; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=msg_size;
+    send_prep_arr(iov, &nelem, &longitud_str, topic);
+    send_prep_arr(iov, &nelem, &msg_size, msg);
 
     // modo de operación de los sockets asegura que si no hay error
     // se enviará todo (misma semántica que los "pipes")
@@ -191,23 +167,11 @@ int msg_length(char *topic, int offset) {
 
     struct iovec iov[4]; // hay que enviar 4 elementos
     int nelem = 0;
-    // preparo el envío del entero convertido a formato de red
-    int entero_net = htonl(MSG_LENGTH); // código de la operación
-    iov[nelem].iov_base=&entero_net;
-    iov[nelem++].iov_len=sizeof(int);
-
-    // preparo el envío del string mandando antes su longitud
+    int code = MSG_LENGTH;
+    send_prep_int(iov, &nelem, &code);
     int longitud_str = strlen(topic); // no incluye el carácter nulo
-    int longitud_str_net = htonl(longitud_str);
-    iov[nelem].iov_base=&longitud_str_net;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=topic; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=longitud_str;
-
-    // preparo el envío del entero convertido a formato de red
-    int entero_net2 = htonl(offset);
-    iov[nelem].iov_base=&entero_net2;
-    iov[nelem++].iov_len=sizeof(int);
+    send_prep_arr(iov, &nelem, &longitud_str, topic);
+    send_prep_int(iov, &nelem, &offset);
 
     // modo de operación de los sockets asegura que si no hay error
     // se enviará todo (misma semántica que los "pipes")
@@ -237,18 +201,10 @@ int end_offset(char *topic) {
 
     struct iovec iov[3]; // hay que enviar 3 elementos
     int nelem = 0;
-     // preparo el envío del entero convertido a formato de red
-    int entero_net = htonl(END_OFFSET); // código de la operación
-    iov[nelem].iov_base=&entero_net;
-    iov[nelem++].iov_len=sizeof(int);
-
-    // preparo el envío del string mandando antes su longitud
+    int code = END_OFFSET;
+    send_prep_int(iov, &nelem, &code);
     int longitud_str = strlen(topic); // no incluye el carácter nulo
-    int longitud_str_net = htonl(longitud_str);
-    iov[nelem].iov_base=&longitud_str_net;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=topic; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=longitud_str;
+    send_prep_arr(iov, &nelem, &longitud_str, topic);
 
 
     // modo de operación de los sockets asegura que si no hay error
@@ -370,26 +326,15 @@ int poll(char **topic, void **msg) {
     it = map_iter_init(subscribed_topics, pos);
     for (found=0; it && !found && map_iter_has_next(it); map_iter_next(it)) {
         map_iter_value(it, NULL, (void **) &st);
+
         struct iovec iov[4]; // hay que enviar 4 elementos
         int nelem = 0;
-
-        // preparo el envío del entero convertido a formato de red
-        int entero_net = htonl(POLL); // código de la operación
-        iov[nelem].iov_base=&entero_net;
-        iov[nelem++].iov_len=sizeof(int);
-
-        // preparo el envío del string mandando antes su longitud
+        int code = POLL;
+        send_prep_int(iov, &nelem, &code);
         int longitud_str = strlen(st->name); // no incluye el carácter nulo
-        int longitud_str_net = htonl(longitud_str);
-        iov[nelem].iov_base=&longitud_str_net;
-        iov[nelem++].iov_len=sizeof(int);
-        iov[nelem].iov_base=st->name; // no se usa & porque ya es un puntero
-        iov[nelem++].iov_len=longitud_str;
-
-        // preparo el envío del entero convertido a formato de red
-        int entero_net2 = htonl(st->offset); // código de la operación
-        iov[nelem].iov_base=&entero_net2;
-        iov[nelem++].iov_len=sizeof(int);
+        send_prep_arr(iov, &nelem, &longitud_str, st->name);
+        int offset = st->offset;
+        send_prep_int(iov, &nelem, &offset);
 
         // modo de operación de los sockets asegura que si no hay error
         // se enviará todo (misma semántica que los "pipes")
@@ -440,31 +385,13 @@ int commit(char *client, char *topic, int offset) {
 
     struct iovec iov[6]; // hay que enviar 4 elementos
     int nelem = 0;
-    // preparo el envío del entero convertido a formato de red
-    int entero_net = htonl(COMMIT); // código de la operación
-    iov[nelem].iov_base=&entero_net;
-    iov[nelem++].iov_len=sizeof(int);
-
-    // preparo el envío del string mandando antes su longitud
+    int code = COMMIT;
+    send_prep_int(iov, &nelem, &code);
     int longitud_str = strlen(client); // no incluye el carácter nulo
-    int longitud_str_net = htonl(longitud_str);
-    iov[nelem].iov_base=&longitud_str_net;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=client; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=longitud_str;
-
-    // preparo el envío del string mandando antes su longitud
+    send_prep_arr(iov, &nelem, &longitud_str, client);
     int longitud_str2 = strlen(topic); // no incluye el carácter nulo
-    int longitud_str_net2 = htonl(longitud_str2);
-    iov[nelem].iov_base=&longitud_str_net2;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=topic; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=longitud_str2;
-
-    // preparo el envío del entero convertido a formato de red
-    int entero_net2 = htonl(offset); // código de la operación
-    iov[nelem].iov_base=&entero_net2;
-    iov[nelem++].iov_len=sizeof(int);
+    send_prep_arr(iov, &nelem, &longitud_str2, topic);
+    send_prep_int(iov, &nelem, &offset);
 
     // modo de operación de los sockets asegura que si no hay error
     // se enviará todo (misma semántica que los "pipes")
@@ -495,26 +422,12 @@ int commited(char *client, char *topic) {
 
     struct iovec iov[5]; // hay que enviar 4 elementos
     int nelem = 0;
-    // preparo el envío del entero convertido a formato de red
-    int entero_net = htonl(COMMITED); // código de la operación
-    iov[nelem].iov_base=&entero_net;
-    iov[nelem++].iov_len=sizeof(int);
-
-    // preparo el envío del string mandando antes su longitud
+    int code = COMMITED;
+    send_prep_int(iov, &nelem, &code);
     int longitud_str = strlen(client); // no incluye el carácter nulo
-    int longitud_str_net = htonl(longitud_str);
-    iov[nelem].iov_base=&longitud_str_net;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=client; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=longitud_str;
-
-    // preparo el envío del string mandando antes su longitud
+    send_prep_arr(iov, &nelem, &longitud_str, client);
     int longitud_str2 = strlen(topic); // no incluye el carácter nulo
-    int longitud_str_net2 = htonl(longitud_str2);
-    iov[nelem].iov_base=&longitud_str_net2;
-    iov[nelem++].iov_len=sizeof(int);
-    iov[nelem].iov_base=topic; // no se usa & porque ya es un puntero
-    iov[nelem++].iov_len=longitud_str2;
+    send_prep_arr(iov, &nelem, &longitud_str2, topic);
 
     // modo de operación de los sockets asegura que si no hay error
     // se enviará todo (misma semántica que los "pipes")

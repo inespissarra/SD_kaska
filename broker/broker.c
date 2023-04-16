@@ -41,12 +41,13 @@ void create_topic(int socket){
     if (recv(socket, &topic_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
         return;
     topic_longitud = ntohl(topic_longitud);
+    printf("Recibido topic_longitud: %d\n", topic_longitud);
     char *topic_name = malloc(topic_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
     if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud)
         return;
     topic_name[topic_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido string: %s\n", topic_name);
+    printf("Recibido topic_name: %s\n", topic_name);
 
     topic *t = malloc(sizeof(topic));
     t->name = malloc(strlen(topic_name)+1);
@@ -75,28 +76,37 @@ void send_msg(int socket){
     if (recv(socket, &topic_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
         return;
     topic_longitud = ntohl(topic_longitud);
+    printf("Recibido topic_longitud: %d\n", topic_longitud);
     char *topic_name = malloc(topic_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
-    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud)
+    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud){
+        free(topic_name);
         return;
+    }
     topic_name[topic_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido string: %s\n", topic_name);
+    printf("Recibido topic_name: %s\n", topic_name);
 
     // luego llega el mensaje, que viene precedido por su longitud
     int msg_size;
-    if (recv(socket, &msg_size, sizeof(int), MSG_WAITALL)!=sizeof(int))
-        return;
+    if (recv(socket, &msg_size, sizeof(int), MSG_WAITALL)!=sizeof(int)){
+        free(topic_name);
+        return; 
+    }
     msg_size = ntohl(msg_size);
+    printf("Recibido msg_size: %d\n", msg_size);
 
     void *msg = malloc(msg_size);
     // ahora sí llega el mensaje
-    if (recv(socket, msg, msg_size, MSG_WAITALL)!=msg_size)
+    if (recv(socket, msg, msg_size, MSG_WAITALL)!=msg_size){
+        free(topic_name);
         return;
+    }
+    printf("Recibido msg\n");
 
     int res;
     topic *t = map_get(topics, topic_name, &err);
     if (err != -1){
-        if (msg_size==0) return; // o que retorna????????????
+        if (msg_size==0) return; // o que retorna???
         message *m = malloc(sizeof(message));
         m->size=msg_size;
         m->msg=msg;
@@ -109,7 +119,6 @@ void send_msg(int socket){
     // envía un entero como respuesta
     res = htonl(res);
     write(socket, &res, sizeof(int)); 
-
 }
 
 void msg_length(int socket){
@@ -118,17 +127,23 @@ void msg_length(int socket){
     if (recv(socket, &topic_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
         return;
     topic_longitud = ntohl(topic_longitud);
+    printf("Recibido topic_longitud: %d\n", topic_longitud);
     char *topic_name = malloc(topic_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
-    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud)
+    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud){
+        free(topic_name);
         return;
+    }
     topic_name[topic_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido string: %s\n", topic_name);
+    printf("Recibido topic_name: %s\n", topic_name);
     // ahora llega el offset
     int offset;
-    if (recv(socket, &offset, sizeof(int), MSG_WAITALL)!=sizeof(int))
+    if (recv(socket, &offset, sizeof(int), MSG_WAITALL)!=sizeof(int)){
+        free(topic_name);
         return;
+    }
     offset = ntohl(offset);
+    printf("Recibido offset: %d\n", offset);
 
     int res;
     topic *t = map_get(topics, topic_name, &err);
@@ -154,12 +169,15 @@ void end_offset(int socket){
     if (recv(socket, &topic_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
         return;
     topic_longitud = ntohl(topic_longitud);
+    printf("Recibido topic_longitud: %d\n", topic_longitud);
     char *topic_name = malloc(topic_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
-    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud)
+    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud){
+        free(topic_name);
         return;
+    }
     topic_name[topic_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido string: %s\n", topic_name);
+    printf("Recibido topic_name: %s\n", topic_name);
 
     int res;
     topic *t = map_get(topics, topic_name, &err);
@@ -179,17 +197,23 @@ void poll(int socket){
     if (recv(socket, &topic_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
         return;
     topic_longitud = ntohl(topic_longitud);
-    char * topic_name = malloc(topic_longitud+1); // +1 para el carácter nulo
+    printf("Recibido topic_longitud: %d\n", topic_longitud);
+    char *topic_name = malloc(topic_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
-    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud)
+    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud){
+        free(topic_name);
         return;
+    }
     topic_name[topic_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido nome do tema: %s\n", topic_name);
+    printf("Recibido topic_name: %s\n", topic_name);
     // ahora llega el offset
     int offset;
-    if (recv(socket, &offset, sizeof(int), MSG_WAITALL)!=sizeof(int))
+    if (recv(socket, &offset, sizeof(int), MSG_WAITALL)!=sizeof(int)){
+        free(topic_name);
         return;
+    }
     offset = ntohl(offset);
+    printf("Recibido offset: %d\n", offset);
     
     int res;
     message *m = NULL;
@@ -197,22 +221,17 @@ void poll(int socket){
     if(err!=-1){
         m = queue_get(t->messages, offset, &err);
         if(err!=-1){
-            printf("aaaa\n");
             struct iovec iov[2]; // hay que enviar 3 elementos
             int nelem = 0;
 
             // preparo el envío del mensaje mandando antes su longitud
             int longitud_str = m->size; // no incluye el carácter nulo
-            int longitud_str_net = htonl(longitud_str);
-            iov[nelem].iov_base=&longitud_str_net;
-            iov[nelem++].iov_len=sizeof(int);
-            iov[nelem].iov_base=m->msg; // no se usa & porque ya es un puntero
-            iov[nelem++].iov_len=longitud_str;
+            send_prep_arr(iov, &nelem, &longitud_str, m->msg);
             writev(socket, iov, 2);
+            free(topic_name);
             return;
         } else{
             res = htonl(0);
-            printf("offset %d", offset);
         }
     } else 
         res = htonl(-1);
@@ -229,29 +248,42 @@ void commit(int socket){
     if (recv(socket, &client_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
         return;
     client_longitud = ntohl(client_longitud);
+    printf("Recibido client_longitud: %d\n", client_longitud);
     char *client = malloc(client_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
-    if (recv(socket, client, client_longitud, MSG_WAITALL)!=client_longitud)
+    if (recv(socket, client, client_longitud, MSG_WAITALL)!=client_longitud){
+        free(client);
         return;
+    }
     client[client_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido string: %s\n", client);
+    printf("Recibido client: %s\n", client);
 
     int topic_longitud;
     // luego llega el string, que viene precedido por su longitud
-    if (recv(socket, &topic_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
+    if (recv(socket, &topic_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int)){
+        free(client);
         return;
+    }
     topic_longitud = ntohl(topic_longitud);
+    printf("Recibido topic_longitud: %d\n", topic_longitud);
     char *topic_name = malloc(topic_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
-    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud)
+    if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud){
+        free(client);
+        free(topic_name);
         return;
+    }
     topic_name[topic_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido string: %s\n", topic_name);
+    printf("Recibido topic_name: %s\n", topic_name);
 
     int offset;
-    if (recv(socket, &offset, sizeof(int), MSG_WAITALL)!=sizeof(int))
+    if (recv(socket, &offset, sizeof(int), MSG_WAITALL)!=sizeof(int)){
+        free(client);
+        free(topic_name);
         return;
+    }
     offset = ntohl(offset);
+    printf("Recibido offset: %d\n", offset);
 
     // crear directorio si no existe
     char dir_name[strlen(offset_folder) + strlen(client) + 1];
@@ -263,6 +295,8 @@ void commit(int socket){
     } else if(ENOENT == errno){
         mkdir(dir_name, 0777);
     } else{
+        free(client);
+        free(topic_name);
         return;
     }
 
@@ -289,34 +323,26 @@ void commited(int socket){
     if (recv(socket, &client_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
         return;
     client_longitud = ntohl(client_longitud);
+    printf("Recibido client_longitud: %d\n", client_longitud);
     char *client = malloc(client_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
     if (recv(socket, client, client_longitud, MSG_WAITALL)!=client_longitud)
         return;
     client[client_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido string: %s\n", client);
+    printf("Recibido client: %s\n", client);
 
     int topic_longitud;
     // luego llega el string, que viene precedido por su longitud
     if (recv(socket, &topic_longitud, sizeof(int), MSG_WAITALL)!=sizeof(int))
         return;
     topic_longitud = ntohl(topic_longitud);
+    printf("Recibido topic_longitud: %d\n", topic_longitud);
     char *topic_name = malloc(topic_longitud+1); // +1 para el carácter nulo
     // ahora sí llega el string
     if (recv(socket, topic_name, topic_longitud, MSG_WAITALL)!=topic_longitud)
         return;
     topic_name[topic_longitud]='\0';       // añadimos el carácter nulo
-    printf("Recibido string: %s\n", topic_name);
-
-    //char dir_name[strlen(offset_folder) + strlen(id_cliente) + 1];
-    //sprintf(dir_name, "%s/%s", offset_folder, id_cliente);
-
-    //DIR* dir = opendir(dir_name);
-    //if(dir){
-    //    closedir(dir);
-    //} else{
-    //    return -1;
-    //}
+    printf("Recibido topic_name: %s\n", topic_name);
 
     char filename[strlen(offset_folder) + strlen(client) + strlen(topic_name)+1];
     sprintf(filename, "%s/%s/%s.txt", offset_folder, client, topic_name);
@@ -472,6 +498,8 @@ int main(int argc, char *argv[]) {
         pthread_create(&thid, &atrib_th, servicio, thinf);
     }
     close(s); // cierra el socket general
+    free(offset_folder);
+    //map_destroy(topics); ???
 
     return 0;
 }
