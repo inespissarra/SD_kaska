@@ -50,13 +50,10 @@ void create_topic(int socket){
     printf("Recibido topic_name: %s\n", topic_name);
 
     topic *t = malloc(sizeof(topic));
-    t->name = malloc(strlen(topic_name)+1);
-    strcpy(t-> name, topic_name);
+    t->name = topic_name;
     t->messages=queue_create(0); // sin cerrojos
 
     int res = map_put(topics, t->name, t);
-
-    free(topic_name);
 
     // envía un entero como respuesta
     res = htonl(res);
@@ -302,7 +299,7 @@ void commit(int socket){
 
     // crear fichero
     char filename[strlen(dir_name)+strlen(topic_name)+1];
-    sprintf(filename, "%s/%s.txt", dir_name, topic_name);
+    sprintf(filename, "%s/%s", dir_name, topic_name);
 
     FILE* fp = fopen(filename, "w");
     fprintf(fp, "%d\n", offset);
@@ -345,7 +342,7 @@ void commited(int socket){
     printf("Recibido topic_name: %s\n", topic_name);
 
     char filename[strlen(offset_folder) + strlen(client) + strlen(topic_name)+1];
-    sprintf(filename, "%s/%s/%s.txt", offset_folder, client, topic_name);
+    sprintf(filename, "%s/%s/%s", offset_folder, client, topic_name);
     int offset;
 
     FILE* fp = fopen(filename, "r");
